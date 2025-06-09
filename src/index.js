@@ -9,7 +9,7 @@ require("./models/index");
 
 //middlewares
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static("src/public"));
 
 //routes
 app.use(mainRoutes);

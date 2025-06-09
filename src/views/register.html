@@ -11,7 +11,7 @@
   </head>
   <body>
     <div class="register">
-      <form class="register-form">
+      <form class="register-form" onsubmit="handleRegisterSubmit(event)">
         <div class="form-group">
           <label for="name">Name</label>
           <div class="input-group">
@@ -66,5 +66,6 @@
       </form>
     </div>
   </body>
-  <script src="js/register.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/js/register.js"></script>
 </html>

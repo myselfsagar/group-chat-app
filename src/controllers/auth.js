@@ -11,7 +11,7 @@ const signupController = async (req, res) => {
   try {
     const user = await userServices.getUserByEmail(email);
     if (user) {
-      return res.status(404).json({ error: "user already exist" });
+      return res.status(409).json({ error: "user already exist" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
