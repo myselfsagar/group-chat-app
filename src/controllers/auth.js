@@ -1,6 +1,7 @@
 const userServices = require("../services/dbCallServices/userServices");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { sendSuccess, sendError } = require("../utils/responseHandler");
 
 const signupControllerGet = (req, res) => {
   return res.sendFile("register.html", { root: "src/views" });
@@ -12,7 +13,7 @@ const signupController = async (req, res) => {
   try {
     const user = await userServices.getUserByEmail(email);
     if (user) {
-      return res.status(409).json({ error: "user already exist" });
+      return sendError(res, "user already exist", 409);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -24,10 +25,10 @@ const signupController = async (req, res) => {
       hashedPassword
     );
 
-    res.status(201).json({ message: newUser });
+    return sendSuccess(res, "Signup successful", 201);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: error.message });
+    return sendError(res, error.message);
   }
 };
 
@@ -41,12 +42,12 @@ const loginController = async (req, res) => {
   try {
     const user = await userServices.getUserByEmail(email);
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return sendError(res, "User not found", 404);
     }
 
     const isMatched = await bcrypt.compare(password, user.password);
     if (!isMatched) {
-      return res.status(401).json({ error: "Incorrect password" });
+      return sendError(res, "Incorrect password", 401);
     }
 
     const access_token = jwt.sign(
@@ -55,10 +56,10 @@ const loginController = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    return res.json({ access_token });
+    return sendSuccess(res, { access_token }, "Login successful");
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: error.message });
+    return sendError(res, error.message);
   }
 };
 
