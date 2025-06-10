@@ -3,43 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register</title>
+    <title>Login</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
   </head>
   <body>
-    <div class="register">
-      <form class="register-form" onsubmit="handleRegisterSubmit(event)">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <div class="input-group">
-            <i class="fas fa-user-astronaut"></i>
-            <input type="text" id="name" name="name" required />
-          </div>
-        </div>
-
+    <div class="login">
+      <form class="login-form" onsubmit="handleLoginSubmit(event)">
         <div class="form-group">
           <label for="email">Email</label>
           <div class="input-group">
             <i class="fa-solid fa-envelope"></i>
             <input type="email" id="email" name="email" required />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="phone">Phone Number</label>
-          <div class="input-group">
-            <i class="fa-solid fa-phone"></i>
-            <input
-              type="tel"
-              id="phone"
-              min="10"
-              max="10"
-              name="phone"
-              required
-            />
           </div>
         </div>
 
@@ -51,21 +28,22 @@
           </div>
         </div>
 
-        <div class="form-group text-center">
-          By clicking 'Register Now', you agree to our
-          <a href="#">Terms & Conditions</a>
+        <div class="form-group">
+          <a href="#">Forgot password?</a>
         </div>
 
         <div class="form-group text-center">
-          <button type="submit">Register</button>
+          <button type="submit">Login</button>
         </div>
 
         <div class="form-group text-center">
-          Already have an account? <a href="/auth/login">Login</a>
+          Don't have an account?
+          <!-- <a href="/auth/register" id="switch-to-register">Register</a> -->
+          <a href="#" id="go-to-register">Register</a>
         </div>
       </form>
     </div>
   </body>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="/js/register.js"></script>
+  <script src="/js/login.js"></script>
 </html>
