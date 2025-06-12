@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>404 Not Found</title>
+    <link rel="stylesheet" href="/css/main.css" />
+    <style>
+      /* 404-specific styles only */
+      .error-page {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background-image: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
+      }
+
+      .error-container {
+        max-width: 450px;
+        padding: 2rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+      }
+
+      .error-code {
+        font-size: 5rem;
+        font-weight: 600;
+        color: #495057;
+        line-height: 1;
+        margin-bottom: 1rem;
+      }
+
+      .error-title {
+        font-size: 1.75rem;
+        font-weight: 500;
+        margin-bottom: 1.25rem;
+        color: #6c757d;
+      }
+
+      .error-message {
+        margin-bottom: 2rem;
+        color: #495057;
+      }
+
+      .home-btn {
+        display: inline-block;
+        padding: 0.75rem 1.75rem;
+        background: #4361ee;
+        color: white;
+        border-radius: 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+      }
+
+      .home-btn:hover {
+        background: #3a56d4;
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(67, 97, 238, 0.2);
+      }
+
+      .error-icon {
+        width: 8rem;
+        height: 8rem;
+        margin-bottom: 0.5rem;
+        color: #4361ee;
+        animation: float 3s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-1rem);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .error-code {
+          font-size: 3.5rem;
+        }
+        .error-title {
+          font-size: 1.5rem;
+        }
+        .error-container {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="error-page">
+    <div class="error-container">
+      <svg
+        class="error-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <h1 class="error-code">404</h1>
+      <h2 class="error-title">Page Not Found</h2>
+      <p class="error-message">
+        We couldn't find what you were looking for. The page may have been moved
+        or doesn't exist.
+      </p>
+      <a href="/" class="home-btn">Return to Home</a>
+    </div>
+  </body>
+</html>

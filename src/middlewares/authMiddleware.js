@@ -1,0 +1,31 @@
+const jwt = require("jsonwebtoken");
+const userServices = require("../services/dbCallServices/userServices");
+const { sendSuccess, sendError } = require("../utils/responseHandler");
+
+const authMiddleware = async (req, res, next) => {
+  try {
+    if (!req.headers.authorization?.startsWith("Bearer ")) {
+      return sendError(res, "Unauthorized, token missing", 401);
+    }
+
+    const token = req.headers.authorization.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY);
+
+    const user = await userServices.getUserById(decoded.userId);
+    if (!user) {
+      return sendError(res, "User not found", 404);
+    }
+
+    req.userId = user.id;
+    next();
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return sendError(res, "Time out please sign in", 401);
+    } else {
+      console.log("Error:", error);
+      sendError(res, `Internal Server Error - ${error.message}`);
+    }
+  }
+};
+
+module.exports = authMiddleware;

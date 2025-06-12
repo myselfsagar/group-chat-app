@@ -18,6 +18,9 @@ const validationSchemas = {
     email: joi.string().email().required(),
     password: joi.string().required(),
   }),
+  sendMessage: joi.object({
+    message: joi.string().required(),
+  }),
 };
 
 module.exports = validationSchemas;
