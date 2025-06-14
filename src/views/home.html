@@ -4,14 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Home</title>
+    <link rel="stylesheet" href="/css/home.css" />
   </head>
   <body>
     <div class="container">
       <h1>Chat App</h1>
       <div class="chats"></div>
 
-      <input type="text" class="type-message" />
-      <button type="submit">Send</button>
+      <input type="text" id="messageInput" placeholder="Type your message..." />
+      <button id="sendBtn">Send</button>
     </div>
   </body>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/js/home.js"></script>
 </html>

@@ -6,7 +6,7 @@ async function handleLoginSubmit(e) {
 
   try {
     const response = await axios.post("login", { email, password });
-    const access_token = response.data.access_token;
+    const access_token = response.data.data.access_token;
     localStorage.setItem("access_token", access_token);
     alert("Login successful");
     window.location.replace("/");

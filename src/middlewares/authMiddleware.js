@@ -20,9 +20,11 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      return sendError(res, "Time out please sign in", 401);
+      return sendError(res, "Session expired, please sign in again", 401);
+    } else if (error.name === "JsonWebTokenError") {
+      return sendError(res, "Invalid token, please sign in", 401);
     } else {
-      console.log("Error:", error);
+      console.log("Unexpected Authentication Error::", error);
       sendError(res, `Internal Server Error - ${error.message}`);
     }
   }
