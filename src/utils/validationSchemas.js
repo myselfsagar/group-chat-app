@@ -19,7 +19,7 @@ const validationSchemas = {
     password: joi.string().required(),
   }),
   sendMessage: joi.object({
-    message: joi.string().required(),
+    message: joi.string().trim().required(),
   }),
 };
 
