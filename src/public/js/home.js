@@ -1,4 +1,5 @@
 const KEY_ACCESS_TOKEN = "access_token";
+const MAX_STORED_MESSAGES = 5;
 
 //setup axios
 const authenticatedAxios = createAuthenticatedAxios();
@@ -36,20 +37,52 @@ async function sendMessage() {
   }
 }
 
+//Render messages on UI
+function renderMessages(messages) {
+  const chatBox = document.getElementById("chatBox");
+  chatBox.innerHTML = "";
+
+  messages.forEach((msg) => {
+    const messageElement = document.createElement("p");
+    messageElement.innerHTML = `You: ${msg.message}`;
+    chatBox.appendChild(messageElement);
+  });
+}
+
 //get all messages
 async function fetchMessages() {
   try {
-    const response = await authenticatedAxios.get("/messages/get-messages");
+    let storedMessages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+    const lastMessageId = localStorage.getItem("lastMessageId") || 0;
+
+    const response = await authenticatedAxios.get(
+      `/messages/get-messages?lastMessageId=${lastMessageId}`
+    );
 
     if (response.data.success) {
-      const messages = response.data.data.messages;
-      const chatBox = document.getElementById("chatBox");
-      chatBox.innerHTML = "";
-      messages.forEach((msg) => {
-        const messageElement = document.createElement("p");
-        messageElement.innerHTML = `You: ${msg.message}`;
-        chatBox.appendChild(messageElement);
-      });
+      let newMessages = response.data.data.messages;
+
+      // Merge new messages on top of old ones available in locastorage
+      storedMessages = [...storedMessages, ...newMessages];
+
+      // Keep only the latest MAX_STORED_MESSAGES messages
+      if (storedMessages.length > MAX_STORED_MESSAGES) {
+        storedMessages = storedMessages.slice(-MAX_STORED_MESSAGES);
+      }
+
+      // Save the updated messages in localStorage
+      localStorage.setItem("chatMessages", JSON.stringify(storedMessages));
+
+      // Update lastMessageId with the latest message ID
+      if (storedMessages.length > 0) {
+        localStorage.setItem(
+          "lastMessageId",
+          storedMessages[storedMessages.length - 1].id
+        );
+      }
+
+      //Render messages on UI
+      renderMessages(storedMessages);
     }
   } catch (error) {
     console.error("Error fetching messages:", error);
@@ -58,9 +91,55 @@ async function fetchMessages() {
   }
 }
 
+async function loadOlderMessages() {
+  try {
+    let storedMessages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+    const oldMessageId = storedMessages.length > 0 ? storedMessages[0].id : 0;
+    console.log(oldMessageId);
+
+    const response = await authenticatedAxios.get(
+      `messages/get-older-messages?oldMessageId=${oldMessageId}`
+    );
+
+    if (response.data.success) {
+      const oldMessages = response.data.data.messages;
+      console.log(oldMessages);
+
+      //merge old messages to the localstorage
+      storedMessages = [...oldMessages, ...storedMessages];
+      console.log(storedMessages);
+
+      // Keep only the limited messages in localstorage
+      if (storedMessages.length > MAX_STORED_MESSAGES) {
+        storedMessages = storedMessages.slice(0, MAX_STORED_MESSAGES);
+      }
+      console.log(storedMessages);
+
+      // Save the updated messages in localStorage
+      localStorage.setItem("chatMessages", JSON.stringify(storedMessages));
+
+      //Render in UI
+      renderMessages(storedMessages);
+    }
+  } catch (error) {
+    console.error("Error fetching old messages:", error);
+    alert("Failed to load old messages");
+    handleError(error);
+  }
+}
+
+function loadOnRefresh() {
+  const storedMessages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+  renderMessages(storedMessages); // Show cached messages instantly
+  fetchMessages(); // Then fetch newer messages
+}
+
 //Event listeners
 document.getElementById("sendBtn").addEventListener("click", sendMessage);
-document.addEventListener("DOMContentLoaded", fetchMessages);
+document
+  .getElementById("loadMore")
+  .addEventListener("click", loadOlderMessages);
+document.addEventListener("DOMContentLoaded", loadOnRefresh);
 
 //error handling
 function handleError(error) {

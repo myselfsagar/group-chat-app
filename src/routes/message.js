@@ -9,6 +9,12 @@ const schemas = require("../utils/validationSchemas");
 
 router.get("/get-messages", authMiddleware, messageController.getMessages);
 
+router.get(
+  "/get-older-messages",
+  authMiddleware,
+  messageController.getOlderMessages
+);
+
 router.post(
   "/send-message",
   authMiddleware,
