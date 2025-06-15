@@ -1,5 +1,5 @@
 const KEY_ACCESS_TOKEN = "access_token";
-const MAX_STORED_MESSAGES = 5;
+const MAX_STORED_MESSAGES = 10;
 
 //setup axios
 const authenticatedAxios = createAuthenticatedAxios();
@@ -91,11 +91,12 @@ async function fetchMessages() {
   }
 }
 
+//get older messages
 async function loadOlderMessages() {
   try {
     let storedMessages = JSON.parse(localStorage.getItem("chatMessages")) || [];
     const oldMessageId = storedMessages.length > 0 ? storedMessages[0].id : 0;
-    console.log(oldMessageId);
+    if (!oldMessageId) return;
 
     const response = await authenticatedAxios.get(
       `messages/get-older-messages?oldMessageId=${oldMessageId}`
@@ -103,23 +104,26 @@ async function loadOlderMessages() {
 
     if (response.data.success) {
       const oldMessages = response.data.data.messages;
-      console.log(oldMessages);
 
       //merge old messages to the localstorage
       storedMessages = [...oldMessages, ...storedMessages];
-      console.log(storedMessages);
 
       // Keep only the limited messages in localstorage
       if (storedMessages.length > MAX_STORED_MESSAGES) {
         storedMessages = storedMessages.slice(0, MAX_STORED_MESSAGES);
       }
-      console.log(storedMessages);
 
       // Save the updated messages in localStorage
       localStorage.setItem("chatMessages", JSON.stringify(storedMessages));
 
+      // Preserve scroll position (so messages don't jump when new ones are added)
+      const previousScrollHeight = chatBox.scrollHeight;
+
       //Render in UI
       renderMessages(storedMessages);
+
+      // Maintain user's scroll position after messages are inserted
+      chatBox.scrollTop = chatBox.scrollHeight - previousScrollHeight;
     }
   } catch (error) {
     console.error("Error fetching old messages:", error);
@@ -140,6 +144,14 @@ document
   .getElementById("loadMore")
   .addEventListener("click", loadOlderMessages);
 document.addEventListener("DOMContentLoaded", loadOnRefresh);
+window.addEventListener("scroll", () => {
+  const chatBox = document.getElementById("chatBox");
+
+  if (chatBox.scrollTop === 0) {
+    // ✅ User scrolled to the top
+    loadOlderMessages(); // Fetch older messages
+  }
+});
 
 //error handling
 function handleError(error) {
