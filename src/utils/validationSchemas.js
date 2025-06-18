@@ -20,6 +20,12 @@ const validationSchemas = {
   }),
   sendMessage: joi.object({
     message: joi.string().trim().required(),
+    receiverId: joi.number().optional(),
+  }),
+  createGroup: joi.object({
+    name: joi.string().trim().required(),
+    about: joi.string().trim().optional(),
+    noOfUsers: joi.string().trim().optional(),
   }),
 };
 

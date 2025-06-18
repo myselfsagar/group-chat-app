@@ -1,5 +1,5 @@
 const express = require("express");
-const messageController = require("../controllers/message.js");
+const groupController = require("../controllers/group.js");
 const router = express.Router();
 
 //middlewares
@@ -8,26 +8,20 @@ const validateRequest = require("../middlewares/validateRequest");
 const verifyGroupMembership = require("../middlewares/verifyGroupMembership.js");
 const schemas = require("../utils/validationSchemas");
 
-router.get(
-  "/get-messages",
-  authMiddleware,
-  verifyGroupMembership,
-  messageController.getMessages
-);
+router.get("/my-groups", authMiddleware, groupController.getMyGroups);
 
-router.get(
-  "/get-older-messages",
+router.post(
+  "/create",
   authMiddleware,
-  verifyGroupMembership,
-  messageController.getOlderMessages
+  validateRequest(schemas.createGroup),
+  groupController.createGroup
 );
 
 router.post(
-  "/send-message",
+  "/invite",
   authMiddleware,
-  validateRequest(schemas.sendMessage),
   verifyGroupMembership,
-  messageController.sendMessage
+  groupController.inviteToGroup
 );
 
 module.exports = router;

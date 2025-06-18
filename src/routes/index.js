@@ -5,6 +5,7 @@ const router = express.Router();
 const authRoutes = require("./auth");
 const mainPageRoutes = require("./mainPage.js");
 const messageRoutes = require("./message");
+const groupRoutes = require("./group.js");
 
 //middlewares
 const notFound = require("../middlewares/notFound.js");
@@ -12,6 +13,7 @@ const notFound = require("../middlewares/notFound.js");
 router.use("/auth", authRoutes);
 router.use(mainPageRoutes);
 router.use("/messages", messageRoutes);
+router.use("/groups", groupRoutes);
 
 router.use(notFound);
 
