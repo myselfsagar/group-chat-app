@@ -99,6 +99,14 @@ exports.getOlderMessages = async (
 
     const oldMessages = await Message.findAll({
       where: whereCondition,
+      include: [
+        {
+          model: User,
+          as: "Sender",
+          attributes: ["id", "name"],
+        },
+      ],
+
       order: [["createdAt", "DESC"]],
       limit: 10,
     });

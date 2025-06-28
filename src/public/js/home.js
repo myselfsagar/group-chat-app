@@ -6,6 +6,7 @@ const elements = {
   groupList: document.getElementById("groupList"),
   inviteBtn: document.getElementById("inviteBtn"),
   loadMore: document.getElementById("loadMore"),
+  memberList: document.getElementById("memberList"),
   messageInput: document.getElementById("messageInput"),
   personalChat: document.getElementById("personal-chat"),
   sendBtn: document.getElementById("sendBtn"),
@@ -13,27 +14,32 @@ const elements = {
 
 //Event listeners
 elements.createGroupBtn.addEventListener("click", createGroup);
+elements.currentGroupName.addEventListener("click", handleGroupNameClick);
+elements.messageInput.addEventListener("keydown", handleMessageInput);
 elements.inviteBtn.addEventListener("click", inviteToGroup);
 elements.sendBtn.addEventListener("click", sendMessage);
 elements.loadMore.addEventListener("click", loadOlderMessages);
 // elements.personalChat.addEventListener("click", loadOlderMessages);
 document.addEventListener("DOMContentLoaded", loadOnRefresh);
-window.addEventListener("scroll", () => {
-  const chatBox = document.getElementById("chatBox");
+// window.addEventListener("scroll", () => {
+//   const chatBox = document.getElementById("chatBox");
 
-  if (chatBox.scrollTop === 0) {
-    // ✅ User scrolled to the top
-    loadOlderMessages(); // Fetch older messages
-  }
-});
+//   if (chatBox.scrollTop === 0) {
+//     // ✅ User scrolled to the top
+//     loadOlderMessages(); // Fetch older messages
+//   }
+// });
 
 //Global variables
 const KEY_ACCESS_TOKEN = "access_token";
 const authenticatedAxios = createAuthenticatedAxios();
+let currentUserId = null;
+let currentUserIsAdmin = false;
+let isViewingMembers = false;
 let selectedReceiverId = null; // For personal chat
 let selectedGroupId = null; // For group chat
 let selectedGroupName = "";
-const MAX_STORED_MESSAGES = 10;
+const MAX_STORED_MESSAGES = 20;
 let isLoadingOlderMessages = false;
 
 //message on localStorage
@@ -81,8 +87,131 @@ async function createGroup() {
     alert("Group created!");
     loadGroups();
   } catch (error) {
-    console.error("Failed to create group", error);
-    alert("Failed to create group");
+    handleError(error);
+  }
+}
+
+//Load all groups
+async function loadGroups() {
+  try {
+    const response = await authenticatedAxios.get("groups/my-groups");
+    elements.groupList.innerHTML = "";
+
+    response.data.data.groups.forEach((group) => {
+      const li = document.createElement("li");
+      li.textContent = group.name;
+      li.onclick = () => selectGroup(group.id, group.name);
+      elements.groupList.appendChild(li);
+    });
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+//Select a group
+function selectGroup(groupId, groupName) {
+  selectedGroupId = groupId;
+  selectedGroupName = groupName;
+  elements.currentGroupName.textContent = groupName;
+  loadOnRefresh(); // reload group messages
+}
+
+function handleGroupNameClick() {
+  if (!selectedGroupId) return;
+
+  isViewingMembers = !isViewingMembers;
+
+  if (isViewingMembers) {
+    // Hide chat, show members
+    elements.chatBox.style.display = "none";
+    elements.loadMore.style.display = "none";
+    elements.messageInput.parentElement.style.display = "none";
+    loadGroupMembers(selectedGroupId);
+  } else {
+    // Show chat, hide members
+    elements.chatBox.style.display = "block";
+    elements.loadMore.style.display = "block";
+    elements.messageInput.parentElement.style.display = "";
+    elements.memberList.innerHTML = "";
+  }
+}
+
+//Load all group members
+async function loadGroupMembers(groupId) {
+  try {
+    const response = await authenticatedAxios.get(`/groups/${groupId}/members`);
+    const members = response.data.data.members;
+
+    // Determine if current user is admin
+    const me = members.find((m) => m.user.id === currentUserId);
+    currentUserIsAdmin = me?.isAdmin || false;
+
+    renderMemberList(members);
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+function renderMemberList(members) {
+  const list = document.getElementById("memberList");
+  list.innerHTML = "";
+
+  members.forEach((entry) => {
+    const { id, name, email } = entry.user;
+    const isAdmin = entry.isAdmin;
+
+    const li = document.createElement("li");
+    li.className = "member-item";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.innerHTML = `<strong>${name}</strong> <small>(${email})</small> ${
+      isAdmin ? "👑" : ""
+    }`;
+    li.appendChild(nameSpan);
+
+    if (currentUserIsAdmin && id !== currentUserId) {
+      //  Add "Make Admin" if not already admin
+      if (!isAdmin) {
+        const makeAdminBtn = document.createElement("button");
+        makeAdminBtn.textContent = "Make Admin";
+        makeAdminBtn.onclick = () => makeUserAdmin(id);
+        li.appendChild(makeAdminBtn);
+      }
+
+      // Always show "Remove"
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove";
+      removeBtn.onclick = () => removeUserFromGroup(id);
+      li.appendChild(removeBtn);
+    }
+
+    list.appendChild(li);
+  });
+}
+
+async function makeUserAdmin(userId) {
+  try {
+    await authenticatedAxios.post(`/groups/makeAdmin`, {
+      userId,
+      groupId: selectedGroupId,
+    });
+    alert("User promoted to admin");
+    await loadGroupMembers(selectedGroupId);
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+async function removeUserFromGroup(userId) {
+  try {
+    await authenticatedAxios.post(`/groups/remove`, {
+      userId,
+      groupId: selectedGroupId,
+    });
+    alert("User has been removed from the group");
+    await loadGroupMembers(selectedGroupId);
+  } catch (error) {
+    handleError(error);
   }
 }
 
@@ -103,45 +232,23 @@ async function inviteToGroup() {
     );
 
     alert("User invited successfully!");
+    await loadGroupMembers(selectedGroupId);
   } catch (error) {
-    console.error("Invite failed:", error.response.data.message);
-    if (error.response.data.statusCode === 404) {
-      alert("User not found with the email id");
-    } else {
-      alert("Failed to invite user");
-    }
+    handleError(error);
   }
 }
 
-//Load all groups
-async function loadGroups() {
-  try {
-    const response = await authenticatedAxios.get("groups/my-groups");
-    elements.groupList.innerHTML = "";
-
-    response.data.data.groups.forEach((group) => {
-      const li = document.createElement("li");
-      li.textContent = group.name;
-      li.onclick = () => selectGroup(group.id, group.name);
-      elements.groupList.appendChild(li);
-    });
-  } catch (error) {
-    console.error("Error loading groups", error);
+function handleMessageInput(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
   }
-}
-
-//Select a group
-function selectGroup(groupId, groupName) {
-  selectedGroupId = groupId;
-  selectedGroupName = groupName;
-  elements.currentGroupName.textContent = groupName;
-  loadOnRefresh(); // reload group messages
 }
 
 //send message
 async function sendMessage() {
   const message = elements.messageInput.value.trim();
-  if (!message) return alert("Please enter a message");
+  if (!message) return;
 
   try {
     let url = "messages/send-message";
@@ -153,9 +260,9 @@ async function sendMessage() {
       payload.receiverId = selectedReceiverId;
     }
 
-    const response = await authenticatedAxios.post(url, payload);
-    console.log("Message saved:", response.data.data);
+    await authenticatedAxios.post(url, payload);
     elements.messageInput.value = "";
+    fetchMessages();
   } catch (error) {
     handleError(error);
   }
@@ -169,8 +276,13 @@ function renderMessages(messages) {
     const isGroupMessage = selectedGroupId !== null;
 
     const messageElement = document.createElement("p");
-    let senderName = msg.Sender?.name || "You";
-    senderName = senderName.split(" ")[0];
+
+    let senderName;
+    if (msg.Sender?.id === currentUserId) {
+      senderName = "You";
+    } else {
+      senderName = msg.Sender?.name?.split(" ")[0] || "Unknown";
+    }
 
     messageElement.innerHTML = isGroupMessage
       ? `<strong>${senderName}:</strong> ${msg.message}`
@@ -224,8 +336,6 @@ async function fetchMessages() {
       renderMessages(storedMessages);
     }
   } catch (error) {
-    console.error("Error fetching messages:", error);
-    alert("Failed to load chat messages");
     handleError(error);
   }
 }
@@ -278,28 +388,35 @@ async function loadOlderMessages() {
       chatBox.scrollTop = chatBox.scrollHeight - previousScrollHeight;
     }
   } catch (error) {
-    console.error("Error fetching old messages:", error);
-    alert("Failed to load old messages");
     handleError(error);
   } finally {
     isLoadingOlderMessages = false;
   }
 }
 
-function loadOnRefresh() {
+async function loadOnRefresh() {
+  await fetchCurrentUserId();
   loadGroups();
   const messages = JSON.parse(localStorage.getItem(getChatStorageKey())) || [];
   renderMessages(messages);
   fetchMessages(); // Then fetch newer messages
 }
 
-//error handling
+async function fetchCurrentUserId() {
+  try {
+    const res = await authenticatedAxios.get("/users/me");
+    currentUserId = res.data.data.user.id;
+  } catch (error) {
+    handleError(error);
+  }
+}
 function handleError(error) {
   if (error.response?.data?.statusCode === 401) {
     localStorage.removeItem(KEY_ACCESS_TOKEN);
     alert(error.response.data.message);
     window.location.replace("auth/login");
   } else {
-    console.error("Error:", error);
+    alert(error.response.data.message);
+    console.error(error.response.data.message, error);
   }
 }

@@ -1,12 +1,9 @@
 const User = require("../../models/User");
 
-const getUserById = async (id) => {
-  try {
-    const user = await User.findByPk(id);
-    return user;
-  } catch (error) {
-    throw error;
-  }
+const getUserById = async (userId) => {
+  return await User.findByPk(userId, {
+    attributes: ["id", "name", "email"],
+  });
 };
 
 const getUserByEmail = async (email) => {
