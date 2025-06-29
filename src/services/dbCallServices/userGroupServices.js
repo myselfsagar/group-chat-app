@@ -29,7 +29,7 @@ const createUserGroup = async (userId, groupId, isAdmin) => {
 const getGroupsByUser = async (userId) => {
   try {
     const memberships = await UserGroup.findAll({
-      where: { userId },
+      where: { userId, status: "active" },
       include: Group,
     });
     return memberships.map((entry) => entry.group);
