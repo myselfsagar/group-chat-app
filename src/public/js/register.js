@@ -14,12 +14,7 @@ async function handleRegisterSubmit(e) {
       alert("Successfuly signed up");
     }
   } catch (error) {
-    if (error.response.status === 400) {
-      alert(error.response.data.error);
-    }
-    if (error.response.status === 409) {
-      alert("User already exists, Please Login");
-    }
+    alert(error.response.data.message);
     console.log(error);
   }
 }

@@ -11,9 +11,7 @@ async function handleLoginSubmit(e) {
     alert("Login successful");
     window.location.replace("/");
   } catch (error) {
-    if (error.response.status === 404 || error.response.status === 401) {
-      alert(error.response.data.error);
-    }
+    alert(error.response.data.message);
     console.log(error);
   }
 }
