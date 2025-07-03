@@ -6,15 +6,21 @@ exports.sendMessage = async (
   message,
   userId,
   receiverId = null,
-  groupId = null
+  groupId = null,
+  isSystem = false,
+  options = {}
 ) => {
   try {
-    const newMessage = await Message.create({
-      message,
-      userId,
-      receiverId,
-      groupId,
-    });
+    const newMessage = await Message.create(
+      {
+        message,
+        userId,
+        receiverId,
+        groupId,
+        isSystem,
+      },
+      options
+    );
     return newMessage;
   } catch (error) {
     throw error;

@@ -7,6 +7,7 @@ const Message = sequelize.define("messages", {
   userId: { type: DataTypes.INTEGER, allowNull: false }, // Sender
   receiverId: { type: DataTypes.INTEGER, allowNull: true }, // ✅ Receiver (only for private chats)
   groupId: { type: DataTypes.INTEGER, allowNull: true }, // ✅ Group (only for group chats)
+  isSystem: { type: DataTypes.BOOLEAN, defaultValue: false },
 });
 
 module.exports = Message;

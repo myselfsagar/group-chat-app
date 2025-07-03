@@ -1,7 +1,9 @@
 const { sendSuccess, sendError } = require("../utils/responseHandler");
+const sequelize = require("../utils/dbConnect");
 const groupServices = require("../services/dbCallServices/groupServices");
 const userServices = require("../services/dbCallServices/userServices");
 const userGroupServices = require("../services/dbCallServices/userGroupServices");
+const messageServices = require("../services/dbCallServices/messageServices");
 
 const createGroup = async (req, res) => {
   try {
@@ -39,18 +41,42 @@ const getGroupMembers = async (req, res) => {
 };
 
 const inviteToGroup = async (req, res) => {
+  const t = await sequelize.transaction();
+
   try {
     const { email, groupId } = req.query;
+    const inviterId = req.userId;
 
-    const user = await userServices.getUserByEmail(email);
-    if (!user) {
+    const inviterUser = await userServices.getUserById(inviterId, {
+      transaction: t,
+    });
+    const invitedUser = await userServices.getUserByEmail(email, {
+      transaction: t,
+    });
+
+    if (!invitedUser) {
+      await t.rollback();
       return sendError(res, "User not found", 404);
     }
 
-    await userGroupServices.createUserGroup(user.id, groupId);
+    await userGroupServices.createUserGroup(invitedUser.id, groupId, false, {
+      transaction: t,
+    });
+
+    await messageServices.sendMessage(
+      `${inviterUser.name} invited ${invitedUser.name} to the group.`,
+      inviterId,
+      invitedUser.id,
+      groupId,
+      true,
+      { transaction: t }
+    );
+
+    await t.commit();
     return sendSuccess(res, "User invited to the group");
   } catch (error) {
-    console.log(error);
+    await t.rollback();
+    console.error(error);
     return sendError(res, error.message);
   }
 };

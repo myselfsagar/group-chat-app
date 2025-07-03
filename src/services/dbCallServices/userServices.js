@@ -1,14 +1,18 @@
 const User = require("../../models/User");
 
-const getUserById = async (userId) => {
+const getUserById = async (userId, options = {}) => {
   return await User.findByPk(userId, {
     attributes: ["id", "name", "email"],
+    ...options,
   });
 };
 
-const getUserByEmail = async (email) => {
+const getUserByEmail = async (email, options = {}) => {
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email },
+      ...options,
+    });
     return user;
   } catch (error) {
     throw error;

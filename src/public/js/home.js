@@ -1,3 +1,6 @@
+//Socket
+const socket = io("http://localhost:5000");
+
 //DOM Elements
 const elements = {
   createGroupBtn: document.getElementById("createGroupBtn"),
@@ -34,6 +37,7 @@ document.addEventListener("DOMContentLoaded", loadOnRefresh);
 const KEY_ACCESS_TOKEN = "access_token";
 const authenticatedAxios = createAuthenticatedAxios();
 let currentUserId = null;
+let currentUserName = null;
 let currentUserIsAdmin = false;
 let isViewingMembers = false;
 let selectedReceiverId = null; // For personal chat
@@ -84,8 +88,14 @@ async function createGroup() {
       name,
       about,
     });
+
     alert("Group created!");
-    loadGroups();
+    await loadGroups();
+
+    selectGroup(response.data.data.group.id, name);
+    socket.emit("join_room", {
+      groupId: response.data.data.group.id,
+    });
   } catch (error) {
     handleError(error);
   }
@@ -100,7 +110,13 @@ async function loadGroups() {
     response.data.data.groups.forEach((group) => {
       const li = document.createElement("li");
       li.textContent = group.name;
-      li.onclick = () => selectGroup(group.id, group.name);
+      li.onclick = () => {
+        selectGroup(group.id, group.name);
+        socket.emit("join_room", {
+          groupId: group.id,
+        });
+      };
+
       elements.groupList.appendChild(li);
     });
   } catch (error) {
@@ -258,14 +274,57 @@ async function sendMessage() {
       url += `?groupId=${selectedGroupId}`;
     } else if (selectedReceiverId) {
       payload.receiverId = selectedReceiverId;
+    } else {
+      return;
     }
 
     await authenticatedAxios.post(url, payload);
+
+    //socket
+    socket.emit("send_message", {
+      roomId: selectedGroupId,
+      message,
+      senderId: currentUserId,
+      name: currentUserName,
+    });
+    // socket.on("receive_message", (msg) => {
+    //   addMessageToUI(msg);
+    // });
+
     elements.messageInput.value = "";
-    fetchMessages();
+
+    // fetchMessages();
   } catch (error) {
     handleError(error);
   }
+}
+
+//Add message to UI
+function addMessageToUI(msg) {
+  const isGroupMessage = selectedGroupId !== null;
+
+  if (msg.isSystem) {
+    const systemMsg = document.createElement("p");
+    systemMsg.textContent = msg.message;
+    systemMsg.className = "system-message";
+    elements.chatBox.appendChild(systemMsg);
+    return;
+  }
+
+  const messageElement = document.createElement("p");
+
+  let senderName;
+  if (msg.senderId === currentUserId) {
+    senderName = "You";
+  } else {
+    senderName = currentUserName;
+  }
+
+  messageElement.innerHTML = isGroupMessage
+    ? `<strong>${senderName}:</strong> ${msg.message}`
+    : `You: ${msg.message}`;
+
+  elements.chatBox.appendChild(messageElement);
 }
 
 //Render messages on UI
@@ -273,6 +332,14 @@ function renderMessages(messages) {
   elements.chatBox.innerHTML = "";
 
   messages.forEach((msg) => {
+    if (msg.isSystem) {
+      const systemMsg = document.createElement("p");
+      systemMsg.textContent = msg.message;
+      systemMsg.className = "system-message";
+      elements.chatBox.appendChild(systemMsg);
+      return;
+    }
+
     const isGroupMessage = selectedGroupId !== null;
 
     const messageElement = document.createElement("p");
@@ -394,8 +461,13 @@ async function loadOlderMessages() {
   }
 }
 
+socket.on("receive_message", (msg) => {
+  addMessageToUI(msg);
+});
+
 async function loadOnRefresh() {
   await fetchCurrentUserId();
+
   loadGroups();
   const messages = JSON.parse(localStorage.getItem(getChatStorageKey())) || [];
   renderMessages(messages);
@@ -406,6 +478,7 @@ async function fetchCurrentUserId() {
   try {
     const res = await authenticatedAxios.get("/users/me");
     currentUserId = res.data.data.user.id;
+    currentUserName = res.data.data.user.name;
   } catch (error) {
     handleError(error);
   }

@@ -2,7 +2,7 @@ const Group = require("../../models/Group");
 const User = require("../../models/User");
 const UserGroup = require("../../models/UserGroup");
 
-const createUserGroup = async (userId, groupId, isAdmin) => {
+const createUserGroup = async (userId, groupId, isAdmin, options = {}) => {
   try {
     const existing = await UserGroup.findOne({ where: { userId, groupId } });
 
@@ -15,12 +15,15 @@ const createUserGroup = async (userId, groupId, isAdmin) => {
       }
     }
 
-    return await UserGroup.create({
-      userId,
-      groupId,
-      isAdmin,
-      status: "active",
-    });
+    return await UserGroup.create(
+      {
+        userId,
+        groupId,
+        isAdmin,
+        status: "active",
+      },
+      options
+    );
   } catch (error) {
     throw error;
   }
