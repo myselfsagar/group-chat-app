@@ -69,6 +69,7 @@ const inviteToGroup = async (req, res) => {
       invitedUser.id,
       groupId,
       true,
+      false,
       { transaction: t }
     );
 

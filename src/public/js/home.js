@@ -6,6 +6,7 @@ const elements = {
   createGroupBtn: document.getElementById("createGroupBtn"),
   chatBox: document.getElementById("chatBox"),
   currentGroupName: document.getElementById("currentGroupName"),
+  fileInput: document.getElementById("fileInput"),
   groupList: document.getElementById("groupList"),
   inviteBtn: document.getElementById("inviteBtn"),
   loadMore: document.getElementById("loadMore"),
@@ -18,6 +19,7 @@ const elements = {
 //Event listeners
 elements.createGroupBtn.addEventListener("click", createGroup);
 elements.currentGroupName.addEventListener("click", handleGroupNameClick);
+elements.fileInput.addEventListener("change", handleFileUpload);
 elements.messageInput.addEventListener("keydown", handleMessageInput);
 elements.inviteBtn.addEventListener("click", inviteToGroup);
 elements.sendBtn.addEventListener("click", sendMessage);
@@ -40,6 +42,7 @@ let currentUserId = null;
 let currentUserName = null;
 let currentUserIsAdmin = false;
 let isViewingMembers = false;
+let pendingFile = null;
 let selectedReceiverId = null; // For personal chat
 let selectedGroupId = null; // For group chat
 let selectedGroupName = "";
@@ -264,6 +267,38 @@ function handleMessageInput(e) {
 //send message
 async function sendMessage() {
   const message = elements.messageInput.value.trim();
+
+  // If a file is selected, send the file
+  if (pendingFile && selectedGroupId) {
+    const formData = new FormData();
+    formData.append("file", pendingFile);
+
+    try {
+      const response = await authenticatedAxios.post(
+        `/messages/send-file?groupId=${selectedGroupId}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      const msgData = response.data.data;
+
+      socket.emit("send_message", {
+        ...msgData,
+        roomId: selectedGroupId,
+      });
+
+      // Optionally clear the input and pending file
+      elements.fileInput.value = "";
+      pendingFile = null;
+    } catch (error) {
+      handleError(error);
+    }
+    return; // Do not send text message if file is sent
+  }
+
+  // Otherwise, send the text message
   if (!message) return;
 
   try {
@@ -299,27 +334,109 @@ async function sendMessage() {
   }
 }
 
+async function handleFileUpload(e) {
+  pendingFile = e.target.files[0] || null;
+}
+
 //Add message to UI
+// function addMessageToUI(msg) {
+//   const isGroupMessage = selectedGroupId !== null;
+
+//   if (msg.isSystem) {
+//     const systemMsg = document.createElement("p");
+//     systemMsg.textContent = msg.message;
+//     systemMsg.className = "system-message";
+//     elements.chatBox.appendChild(systemMsg);
+//     return;
+//   }
+
+//   if (msg.isFile) {
+//     const link = document.createElement("a");
+//     link.href = msg.message;
+//     link.textContent = "📁 Download File";
+//     link.target = "_blank";
+//     elements.chatBox.appendChild(link);
+//     return;
+//   }
+
+//   const messageElement = document.createElement("p");
+
+//   let senderName;
+//   if (msg.senderId === currentUserId) {
+//     senderName = "You";
+//   } else {
+//     senderName = msg.name;
+//   }
+
+//   messageElement.innerHTML = isGroupMessage
+//     ? `<strong>${senderName}:</strong> ${msg.message}`
+//     : `You: ${msg.message}`;
+
+//   elements.chatBox.appendChild(messageElement);
+// }
 function addMessageToUI(msg) {
   const isGroupMessage = selectedGroupId !== null;
 
   if (msg.isSystem) {
     const systemMsg = document.createElement("p");
     systemMsg.textContent = msg.message;
-    systemMsg.className = "system-message";
+    systemMsg.style.textAlign = "center";
+    systemMsg.style.color = "gray";
+    systemMsg.style.fontStyle = "italic";
     elements.chatBox.appendChild(systemMsg);
     return;
   }
 
-  const messageElement = document.createElement("p");
+  const messageElement = document.createElement("div");
+  messageElement.style.marginBottom = "10px";
 
-  let senderName;
-  if (msg.senderId === currentUserId) {
-    senderName = "You";
-  } else {
-    senderName = currentUserName;
+  // File preview
+  if (msg.isFile) {
+    const url = msg.message;
+    const extension = url.split(".").pop().toLowerCase();
+
+    const senderName =
+      msg.senderId === currentUserId
+        ? "You"
+        : msg.name || (msg.Sender && msg.Sender.name) || "User";
+    const label = document.createElement("p");
+    label.innerHTML = isGroupMessage
+      ? `<strong>${senderName}:</strong>`
+      : `You:`;
+    label.style.marginBottom = "4px";
+    messageElement.appendChild(label);
+
+    // then append image/video/link as you're doing
+
+    if (["png", "jpg", "jpeg", "gif", "webp"].includes(extension)) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.style.maxWidth = "250px";
+      img.style.borderRadius = "8px";
+      messageElement.appendChild(img);
+    } else if (["mp4", "webm", "ogg"].includes(extension)) {
+      const video = document.createElement("video");
+      video.src = url;
+      video.controls = true;
+      video.style.maxWidth = "250px";
+      messageElement.appendChild(video);
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.textContent = "📎 Download File";
+      messageElement.appendChild(link);
+    }
+
+    elements.chatBox.appendChild(messageElement);
+    return;
   }
 
+  // Normal text message
+  const senderName =
+    msg.senderId === currentUserId
+      ? "You"
+      : msg.name || (msg.Sender && msg.Sender.name) || "User";
   messageElement.innerHTML = isGroupMessage
     ? `<strong>${senderName}:</strong> ${msg.message}`
     : `You: ${msg.message}`;
@@ -330,33 +447,7 @@ function addMessageToUI(msg) {
 //Render messages on UI
 function renderMessages(messages) {
   elements.chatBox.innerHTML = "";
-
-  messages.forEach((msg) => {
-    if (msg.isSystem) {
-      const systemMsg = document.createElement("p");
-      systemMsg.textContent = msg.message;
-      systemMsg.className = "system-message";
-      elements.chatBox.appendChild(systemMsg);
-      return;
-    }
-
-    const isGroupMessage = selectedGroupId !== null;
-
-    const messageElement = document.createElement("p");
-
-    let senderName;
-    if (msg.Sender?.id === currentUserId) {
-      senderName = "You";
-    } else {
-      senderName = msg.Sender?.name?.split(" ")[0] || "Unknown";
-    }
-
-    messageElement.innerHTML = isGroupMessage
-      ? `<strong>${senderName}:</strong> ${msg.message}`
-      : `You: ${msg.message}`;
-
-    elements.chatBox.appendChild(messageElement);
-  });
+  messages.forEach(addMessageToUI);
 }
 
 //get all messages

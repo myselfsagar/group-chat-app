@@ -31,12 +31,23 @@
   display: flex;
   border-top: 1px solid #ccc;
   margin-top: 10px;
+  align-items: center;
   gap: 10px;
 }
 
 .chat-input input {
   flex: 1;
   padding: 0.5rem;
+}
+
+label[for="fileInput"] {
+  cursor: pointer;
+  font-size: 20px;
+  color: #555;
+}
+
+#sendBtn {
+  padding: 7px 10px;
 }
 
 .member-item {

@@ -1,39 +1,18 @@
 const express = require("express");
-require("dotenv").config();
-const mainRoutes = require("./routes/index");
 const app = express();
 const http = require("http").createServer(app);
-const { Server } = require("socket.io");
-const Message = require("./models/Message");
+const { init } = require("./socket");
 
-const io = new Server(http, {
-  cors: {
-    origin: "*",
-  },
-});
-
-//Socket logic
-io.on("connection", (socket) => {
-  console.log("New user connected", socket.id);
-
-  socket.on("send_message", (messageData) => {
-    io.to(messageData.roomId).emit("receive_message", messageData);
-  });
-
-  socket.on("join_room", async ({ groupId }) => {
-    socket.join(groupId);
-  });
-});
-
-//connect to db
-const dbConnect = require("./utils/dbConnect");
+require("dotenv").config();
 require("./models/index");
+const mainRoutes = require("./routes/index");
+const dbConnect = require("./utils/dbConnect");
+
+const io = init(http);
 
 //middlewares
 app.use(express.json());
 app.use(express.static("src/public"));
-
-//routes
 app.use(mainRoutes);
 
 //connect to the server

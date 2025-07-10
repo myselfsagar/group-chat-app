@@ -13,6 +13,7 @@ async function handleRegisterSubmit(e) {
     if (response.status === 201) {
       alert("Successfuly signed up");
     }
+    window.location.replace("/auth/login");
   } catch (error) {
     alert(error.response.data.message);
     console.log(error);

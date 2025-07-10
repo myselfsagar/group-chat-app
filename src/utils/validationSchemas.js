@@ -21,6 +21,7 @@ const validationSchemas = {
   sendMessage: joi.object({
     message: joi.string().trim().required(),
     receiverId: joi.number().optional(),
+    groupId: joi.number().optional(),
   }),
   createGroup: joi.object({
     name: joi.string().trim().required(),

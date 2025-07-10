@@ -6,6 +6,7 @@ const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware.js");
 const validateRequest = require("../middlewares/validateRequest");
 const verifyGroupMembership = require("../middlewares/verifyGroupMembership.js");
+const upload = require("../middlewares/upload");
 const schemas = require("../utils/validationSchemas");
 
 router.get(
@@ -28,6 +29,15 @@ router.post(
   validateRequest(schemas.sendMessage),
   verifyGroupMembership,
   messageController.sendMessage
+);
+
+router.post(
+  "/send-file",
+  authMiddleware,
+  validateRequest(schemas.sendMessage),
+  verifyGroupMembership,
+  upload.single("file"),
+  messageController.sendFile
 );
 
 module.exports = router;

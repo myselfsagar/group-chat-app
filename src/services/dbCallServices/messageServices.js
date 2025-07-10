@@ -8,6 +8,7 @@ exports.sendMessage = async (
   receiverId = null,
   groupId = null,
   isSystem = false,
+  isFile = false,
   options = {}
 ) => {
   try {
@@ -18,6 +19,7 @@ exports.sendMessage = async (
         receiverId,
         groupId,
         isSystem,
+        isFile,
       },
       options
     );

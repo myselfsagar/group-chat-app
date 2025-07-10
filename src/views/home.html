@@ -35,7 +35,14 @@
         <button id="loadMore">Load more…</button>
 
         <div class="chat-input">
-          <input id="messageInput" placeholder="Type your message..." />
+          <input
+            type="text"
+            id="messageInput"
+            placeholder="Type your message..."
+          />
+          <input type="file" id="fileInput" style="display: none" />
+          <label for="fileInput" id="fileLabel"> 📎 </label>
+
           <button id="sendBtn">Send</button>
         </div>
       </main>
