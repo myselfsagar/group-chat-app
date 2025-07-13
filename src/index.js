@@ -5,6 +5,7 @@ const { init } = require("./socket");
 
 require("dotenv").config();
 require("./models/index");
+require("./services/archivedMessages");
 const mainRoutes = require("./routes/index");
 const dbConnect = require("./utils/dbConnect");
 

@@ -1,5 +1,6 @@
 const User = require("./User");
 const Message = require("./Message");
+const ArchivedMessage = require("./ArchivedMessage");
 const Group = require("./Group");
 const UserGroup = require("./UserGroup");
 
